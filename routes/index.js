@@ -57,13 +57,13 @@ router.get("/login", function(req, res){
 
 
 //HANDLE LOGIN FORM LOGIC
-router.post("/login", passport.authenticate("local", {
-    successRedirect: "/campgrounds",
-    failureRedirect: "/login",
-    failureFlash: true,
-    successFlash: "Welcome back to YelpCamp!"
-    }), function(req, res){
-        req.flash("success", "Welcome back " + req.user.username);
+router.post("/login", function(req, res, next){
+    passport.authenticate("local", {
+        successRedirect: "/campgrounds",
+        failureRedirect: "/login",
+        failureFlash: true,
+        successFlash: "Welcome back to YelpCamp " + req.body.username + "!"
+    })(req, res);
 });
 
 //HANDLE LOGOUT ROUTE
@@ -107,6 +107,7 @@ router.post("/forgot", function(req, res, next){
         },
         function(token, user, done){
             //smtpTransport contains info about our mailing service (nodemailer)
+            console.log(user);
             var smtpTransport = nodemailer.createTransport({
                 service: "Gmail",
                 auth: {
@@ -114,8 +115,10 @@ router.post("/forgot", function(req, res, next){
                     pass: process.env.GMAILPW
                 }
             });
+            console.log(user.mail);
             var mailOptions = {
-                to: user.mail,
+                to: user.email,
+                secure: false,
                 from: "pvanny1124@gmail.com",
                 subject: "Node.js password reset",
                 text: 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
@@ -123,7 +126,7 @@ router.post("/forgot", function(req, res, next){
                       'http://' + req.headers.host + '/reset/' + token + '\n\n' +
                       'If you did not request this, please ignore this email and your password will remain unchanged.\n'
             };   //req.headers.host is your website address (i.e. localhost, heroku url, custom domain, etc..)
-            
+            console.log(user.mail);
             //send mail
             smtpTransport.sendMail(mailOptions, function(err){
                 console.log("mail sent");
@@ -185,6 +188,7 @@ router.post("/reset/:token", function(req, res){
            //setup transport
             var smtpTransport = nodemailer.createTransport({
                 service: "Gmail",
+                secure: false,
                 auth: {
                     user: "pvanny1124@gmail.com",
                     pass: process.env.GMAILPW
