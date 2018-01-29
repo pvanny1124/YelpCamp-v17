@@ -1,9 +1,12 @@
 //ROUTES
-var express = require("express");
-var router = express.Router();
-var passport = require("passport");
-var User = require("../models/user");
-var Campground = require("../models/campgrounds");
+var express      = require("express"),
+    router       = express.Router(),
+    passport     = require("passport"),
+    User         = require("../models/user"),
+    Campground   = require("../models/campgrounds"),
+    async        = require("async"),
+    crypto       = require("crypto"),
+    nodemailer   = require("nodemailer");
 
 //root route
 router.get("/", function(req, res){
@@ -68,6 +71,34 @@ router.get("/logout", function(req, res){
     req.logout();
     req.flash("success", "Logged you out!");
     res.redirect("/campgrounds");
+});
+
+//FORGOT PASSWORD ROUTES
+router.get("/forgot", function(req, res){
+   res.render("forgot"); 
+});
+
+router.post("/forgot", function(req, res, next){
+    //waterfall calls functions in an array one after the other
+    async.waterfall([
+        function(done){
+            //create random string of hex to create token
+            crypto.randomBytes(20, function(err, buffer){
+               var token = buffer.toString("hex"); 
+               //token that is sent as part of url to the users email address that will expire after an hour
+               done(err, token);
+            });
+        },
+        function(token, done){
+            User.findOne({ email: req.body.email }, function(err, user){
+                if(!user){
+                    req.flash("error", "No account with that email exists.");
+                    return res.redirect; 
+                }
+            });
+        },
+        
+        ]);
 });
 
 //USER PROFILE ROUTE
